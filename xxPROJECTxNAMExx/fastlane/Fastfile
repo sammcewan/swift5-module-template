@@ -1,0 +1,41 @@
+default_platform :ios
+platform :ios do
+
+  desc "Lint the project, and ensure it's clean"
+  lane :lint do
+    swiftlint(
+      mode: :autocorrect,
+      path: './Sources',
+      quiet: true,
+      format: true,
+      ignore_exit_status: true
+    )
+    swiftlint(
+      mode: :lint,
+      path: './Sources',
+      quiet: true,
+      ignore_exit_status: true
+    )
+  end
+
+  desc "Publishes the project by bumping pod, tagging, committing, then pushing"
+  lane :publish do
+    ensure_git_status_clean
+    ensure_git_branch(branch: 'main')
+    bumpType = prompt(text: "What kind of version is this (patch / minor / major): ")
+    version = increment_version_number(bump_type: bumpType, xcodeproj: "./iOS Example/iOS Example.xcodeproj")
+    git_commit(path: "./iOS Example/Sources/Info.plist", message: "Version #{bumpType} bump to #{version}")
+    add_git_tag(tag: version)
+    push_to_git_remote
+  end
+
+  desc "Publishes the project by bumping pod, tagging, committing, then pushing"
+  lane :publish_beta do
+    ensure_git_status_clean
+    version_number = prompt(text: "What name do you want to give this version? E.g. 2.0-alpha1")
+    version = increment_version_number(version_number: version_number, xcodeproj: "./iOS Example/iOS Example.xcodeproj")
+    git_commit(path: "./iOS Example/Sources/Info.plist", message: "Version bump to #{version}")
+    add_git_tag(tag: version)
+    push_to_git_remote
+  end
+end
